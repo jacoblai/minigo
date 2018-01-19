@@ -3,7 +3,6 @@ package main
 import (
 	"runtime"
 	"strconv"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -37,7 +36,6 @@ func main() {
 	dir = dir + "/data"
 	if _, err := os.Stat(dir); err != nil {
 		log.Println(err)
-		fmt.Println(err)
 		return
 	}
 	ymlfile := ""
@@ -48,19 +46,17 @@ func main() {
 	}
 
 	//启动文件日志
-	logFile, logErr := os.OpenFile(dir+"/dal.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-	if logErr != nil {
-		log.Printf("err: %v\n", logErr)
-		fmt.Printf("err: %v\n", logErr)
-		return
-
-	}
-	log.SetOutput(logFile)
+	//logFile, logErr := os.OpenFile(dir+"/dal.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+	//if logErr != nil {
+	//	log.Printf("err: %v\n", logErr)
+	//	return
+	//
+	//}
+	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	if _, err := os.Stat(ymlfile); err != nil {
 		log.Println(err)
-		fmt.Println(err)
 		return
 	}
 	buf, _ := ioutil.ReadFile(ymlfile)
@@ -68,7 +64,6 @@ func main() {
 	err = yaml.Unmarshal(buf, &y)
 	if err != nil {
 		log.Printf("err: %v\n", err)
-		fmt.Printf("err: %v\n", err)
 		return
 	}
 
@@ -92,7 +87,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	fmt.Println("server on port", y.Port)
+	log.Println("server on port", y.Port)
 
 	signalChan := make(chan os.Signal, 1)
 	cleanupDone := make(chan bool)
