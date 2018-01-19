@@ -7,7 +7,11 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 )
 
-func RetChanges(changes int64) string {
+func RetChanges(w http.ResponseWriter, changes int64) {
+	fmt.Fprintf(w,`{"ok":%v,"changes":%v}`, true, changes)
+}
+
+func resChanges(changes int64) string {
 	return fmt.Sprintf(`{"ok":%v,"changes":%v}`, true, changes)
 }
 
@@ -15,7 +19,7 @@ func RetOk(w http.ResponseWriter, result interface{}) {
 	resValue := reflect.ValueOf(result)
 
 	if result == nil {
-		fmt.Fprint(w, RetChanges(0))
+		fmt.Fprint(w, resChanges(0))
 	}
 
 	var res interface{}

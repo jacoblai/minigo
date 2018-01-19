@@ -79,6 +79,10 @@ func main() {
 		writer.Write([]byte("service is on working..."))
 	})
 	router.POST("/api/users", auth.Auth(eng.AddUser))
+	router.GET("/api/users", auth.Auth(eng.GetUsers))
+	router.PUT("/api/user/:uid", auth.Auth(eng.PutUser))
+	router.GET("/api/user/:uid", auth.Auth(eng.GetUser))
+	router.DELETE("/api/user/:uid", auth.Auth(eng.DelUser))
 
 	srv := &http.Server{Handler: cors.CORS(router)}
 	srv.Addr = ":" + strconv.Itoa(y.Port)
