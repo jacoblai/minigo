@@ -27,3 +27,7 @@ func (d *DbEngine) Open(dir string) error {
 	}
 	return nil
 }
+
+func (d *DbEngine) Close(){
+	d.Engine.Close()
+}

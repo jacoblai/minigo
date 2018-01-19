@@ -100,6 +100,7 @@ func main() {
 		for range signalChan {
 			ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
 			srv.Shutdown(ctx)
+			eng.Close()
 			cleanupDone <- true
 		}
 	}()
