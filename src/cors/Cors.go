@@ -10,7 +10,7 @@ const (
 	origin        = "Origin"
 	methods       = "GET,PUT,POST,DELETE"
 	// If you want to expose some other headers add it here
-	headers = "U-ApiKey,Authorization,Content-Length,Content-Type"
+	headers = "Authorization,Content-Length,Content-Type"
 )
 
 // Handler will allow cross-origin HTTP requests

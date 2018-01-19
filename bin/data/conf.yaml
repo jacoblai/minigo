@@ -1,15 +1,7 @@
 debug: 1
 # 服务端口: port
-port: 9008
+port: 9090
 # 数据库类型: dbtype
-dbtype: mssql
-# 数据库用户: dbuser
-dbuser: sa
-# 数据库密码: dbpwd
-dbpwd: Hp123456
-# 数据库IP: dbip
-dbip: 192.168.5.242
-# 数据库端口: dbport
-dbport: 1433
-# 数据库名称: dbname
-dbname: egov3
+dbtype: postgres
+# dbconnetionstring
+dbconstr: host=192.168.5.235 user=postgres dbname=ldh sslmode=disable password=1q2w3e4r

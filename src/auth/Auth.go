@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"github.com/jacoblai/httprouter"
 )
 
 func Auth(next httprouter.Handle) httprouter.Handle {

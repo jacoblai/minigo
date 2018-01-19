@@ -14,7 +14,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"github.com/ghodss/yaml"
-	"github.com/julienschmidt/httprouter"
+	"github.com/jacoblai/httprouter"
 	"context"
 	"engine"
 	"auth"
@@ -76,20 +76,20 @@ func main() {
 	eng.SystemConfig = &y
 	err = eng.Open(dir)
 	if err != nil{
-		panic("database connect error")
+		log.Fatal("database connect error")
 	}
 
 	router := httprouter.New()
 	router.GET("/", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		writer.Write([]byte("service is on working..."))
 	})
-	router.POST("/api/Users", auth.Auth(eng.AddUser))
+	router.POST("/api/users", auth.Auth(eng.AddUser))
 
 	srv := &http.Server{Handler: cors.CORS(router)}
 	srv.Addr = ":" + strconv.Itoa(y.Port)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 	fmt.Println("server on port", y.Port)
