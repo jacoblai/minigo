@@ -4,7 +4,6 @@ import (
 	"runtime"
 	"strconv"
 	"fmt"
-	"crypto/tls"
 	"log"
 	"os"
 	"os/signal"
@@ -13,8 +12,13 @@ import (
 	"flag"
 	"path/filepath"
 	"io/ioutil"
-	"encoding/json"
 	"net/http"
+	"github.com/ghodss/yaml"
+	"github.com/julienschmidt/httprouter"
+	"context"
+	"engine"
+	"auth"
+	"cors"
 )
 
 func init() {
@@ -23,76 +27,72 @@ func init() {
 
 func main() {
 	var (
-		port = flag.Int("p", 9007, "web api port")
+		conf = flag.String("c", "/conf.yaml", "config yaml file flag")
 	)
 	flag.Parse()
-
-	log.SetOutput(os.Stdout)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 	dir = dir + "/data"
 	if _, err := os.Stat(dir); err != nil {
 		log.Println(err)
+		fmt.Println(err)
 		return
 	}
-	var y filecore.ConfigYml
-	yml, _ := ioutil.ReadFile(dir + "/conf.json")
-	cyml := filecore.MsgDecode(yml)
-	err = json.Unmarshal(cyml, &y)
-	if err != nil {
-		log.Println(err)
+	ymlfile := ""
+	if *conf == "/conf.yaml" {
+		ymlfile = dir + *conf
+	} else {
+		ymlfile = *conf
 	}
-	filecore.AllowOrigins = y.AllowOrigin
-	filecore.EnableAuth = y.VmAuth
 
-	fdb := filecore.NewFileDb(*httpMode, *syncMode, *ipcPort, *limitupload)
-	err = fdb.Open(y, dir)
-	if err != nil {
-		fdb.LogSend("yiyifd", "错误", err.Error())
-		log.Println(err)
+	//启动文件日志
+	logFile, logErr := os.OpenFile(dir+"/dal.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+	if logErr != nil {
+		log.Printf("err: %v\n", logErr)
+		fmt.Printf("err: %v\n", logErr)
 		return
+
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	if _, err := os.Stat(ymlfile); err != nil {
+		log.Println(err)
+		fmt.Println(err)
+		return
+	}
+	buf, _ := ioutil.ReadFile(ymlfile)
+	var y engine.ConfigYml
+	err = yaml.Unmarshal(buf, &y)
+	if err != nil {
+		log.Printf("err: %v\n", err)
+		fmt.Printf("err: %v\n", err)
+		return
+	}
+
+	eng := &engine.DbEngine{}
+	eng.SystemConfig = &y
+	err = eng.Open(dir)
+	if err != nil{
+		panic("database connect error")
 	}
 
 	router := httprouter.New()
 	router.GET("/", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		writer.Write([]byte("yiyifd service is on working..."))
+		writer.Write([]byte("service is on working..."))
 	})
-	router.GET("/api/dl/:fid", filecore.GzipHandler(fdb.PhotoGet))
-	router.GET("/api/info/:fid", fdb.PhotoInfoGet)
-	router.POST("/api/upload/:md5", fdb.Auth(fdb.PhotoPost))
-	router.POST("/api/form", fdb.Auth(fdb.PhotoPostForm))
+	router.POST("/api/Users", auth.Auth(eng.AddUser))
 
-	srv := &http.Server{Handler: filecore.CORS(router)}
-	if *tlsPort == 0 {
-		srv.Addr = ":" + strconv.Itoa(*port)
-		go func() {
-			if err := srv.ListenAndServe(); err != nil {
-				fdb.LogSend("yiyifd", "错误", err.Error())
-			}
-		}()
-		fdb.LogSend("yiyifd", "日志", "server on port "+strconv.Itoa(*port))
-		fmt.Println("server on port", *port)
-	} else {
-		cert, err := tls.LoadX509KeyPair(dir+"/server.pem", dir+"/server.key")
-		if err != nil {
-			fdb.LogSend("yiyifd", "警告", err.Error())
+	srv := &http.Server{Handler: cors.CORS(router)}
+	srv.Addr = ":" + strconv.Itoa(y.Port)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			panic(err)
 		}
-		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		srv.TLSConfig = config
-		srv.Addr = ":" + strconv.Itoa(*tlsPort)
-		go func() {
-			if err := srv.ListenAndServeTLS("", ""); err != nil {
-				fdb.LogSend("yiyifd", "错误", err.Error())
-			}
-		}()
-		fdb.LogSend("yiyifd", "日志", "server on tls port "+strconv.Itoa(*tlsPort))
-		log.Println("server on tls port", *tlsPort)
-	}
+	}()
+	fmt.Println("server on port", y.Port)
 
 	signalChan := make(chan os.Signal, 1)
 	cleanupDone := make(chan bool)
@@ -101,7 +101,6 @@ func main() {
 		for range signalChan {
 			ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
 			srv.Shutdown(ctx)
-			fdb.Die()
 			cleanupDone <- true
 		}
 	}()

@@ -1,4 +1,4 @@
-debug: 0
+debug: 1
 # 服务端口: port
 port: 9008
 # 数据库类型: dbtype
