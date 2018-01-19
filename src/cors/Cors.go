@@ -8,7 +8,7 @@ const (
 	allow_methods = "Access-Control-Allow-Methods"
 	allow_headers = "Access-Control-Allow-Headers"
 	origin        = "Origin"
-	methods       = "GET,PUT,POST,DELETE"
+	methods       = "GET,PUT,POST,DELETE,PATCH"
 	// If you want to expose some other headers add it here
 	headers = "Authorization,Content-Length,Content-Type"
 )
