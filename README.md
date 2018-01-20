@@ -1,0 +1,2 @@
+# minigo
+goland+gorm+pgsql
